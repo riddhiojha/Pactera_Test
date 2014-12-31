@@ -17,6 +17,9 @@
 {
     NSMutableData *_responseData;
     NSMutableArray *dataArray;
+    
+    UILabel *headinLabel;
+    UILabel *pullDownInstructionLabel;
 }
 
 @property (nonatomic, retain) UITableView *tableView;

@@ -17,17 +17,22 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    [self.view setBackgroundColor:[UIColor whiteColor]];
     dataArray = [[NSMutableArray alloc] init];
-    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 320, 568)];
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 90, 320, 390)];
     [self.tableView setDataSource:self];
     [self.tableView setDelegate:self];
     [self.view addSubview:self.tableView];
     
-    UIRefreshControl *refreshControlLocal = [[UIRefreshControl alloc]
+    refreshControl = [[UIRefreshControl alloc]
                                         init];
-    refreshControlLocal.tintColor = [UIColor blueColor];
-    [refreshControlLocal addTarget:self action:@selector(getDataFromURL) forControlEvents:UIControlEventValueChanged];
-    self.refreshControl = refreshControlLocal;    // Do any additional setup after loading the view, typically from a nib.
+    refreshControl.tintColor = [UIColor colorWithRed:89/255.0 green:173/255.0 blue:222/255.0 alpha:1.0];
+    [refreshControl addTarget:self action:@selector(getDataFromURL) forControlEvents:UIControlEventValueChanged];
+
+    [self.tableView addSubview:refreshControl];
+    
+    
+
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -49,9 +54,26 @@
     [operation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation
                                                , id responseObject) {
         
+        headinLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, 320, 35)];
+        headinLabel.text = [responseObject objectForKey:@"title"];
+        headinLabel.textColor = [UIColor colorWithRed:248/255.0 green:88/255.0 blue:88/255.0 alpha:1.0];
+        headinLabel.font = [UIFont fontWithName:@"TSTAR-Headline" size:25];
+        headinLabel.textAlignment = NSTextAlignmentCenter;
+        
+        pullDownInstructionLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 55, 320, 15)];
+        pullDownInstructionLabel.text = @"Pull down to refresh the feed";
+        pullDownInstructionLabel.textColor = [UIColor darkGrayColor];
+        pullDownInstructionLabel.font = [UIFont fontWithName:@"TSTAR-Light" size:14];
+        pullDownInstructionLabel.textAlignment = NSTextAlignmentCenter;
+        
+        [self.view addSubview:headinLabel];
+        [self.view addSubview:pullDownInstructionLabel];
+        
+        
         
         dataArray = [responseObject objectForKey:@"rows"];
         [self.tableView reloadData];
+        [refreshControl endRefreshing];
         NSLog(@"JSON: %@", dataArray);
         
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
@@ -101,49 +123,49 @@
         [cellDict setValue:@"-" forKey:@"description"];
     }
     
-    if([[cellDict valueForKey:@"image"] isEqual:[NSNull null]])
+    if([[cellDict valueForKey:@"imageHref"] isEqual:[NSNull null]])
     {
-        [cellDict setValue:@"-" forKey:@"image"];
+        [cellDict setValue:@"-" forKey:@"imageHref"];
     }
     
 
     NSString *mainNameLabel = [cellDict valueForKey:@"title"];
-    UIFont *mainLabelFont = [UIFont fontWithName:@"TSTAR-Light" size:20];
+    UIFont *mainLabelFont = [UIFont fontWithName:@"TSTAR-Headline" size:20];
     
     
     NSString *descriptionLabelText = [cellDict valueForKey:@"description"];
-    UIFont *descriptionLabelFont = [UIFont fontWithName:@"TSTAR-Light" size:14];
+    UIFont *descriptionLabelFont = [UIFont fontWithName:@"TSTAR-Regular" size:14];
     
     
     
     //get size of text
-    CGSize sizeMainLabel = [self getSizeOfText:mainNameLabel withFont:mainLabelFont];
     CGSize sizeDescriptionLabel = [self getSizeOfText:descriptionLabelText withFont:descriptionLabelFont];
     
     
     
-    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(4, sizeMainLabel.height/2-4, 20, 20)];
+    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(240, (sizeDescriptionLabel.height+60)/2-30, 60, 60)];
     
     //For lazy loading of images we use SD web image API
     
-    [imageView sd_setImageWithURL:[NSURL URLWithString:[cellDict valueForKey:@"image"]] placeholderImage:[UIImage imageNamed:@"placeholderLogo.png"]];
-    [imageView setContentMode:UIViewContentModeScaleAspectFit];
+    [imageView sd_setImageWithURL:[NSURL URLWithString:[cellDict valueForKey:@"imageHref"]] placeholderImage:[UIImage imageNamed:@"placeholderLogo.png"]];
+    imageView.clipsToBounds = YES;
+    [imageView setContentMode:UIViewContentModeScaleAspectFill];
     
     //Title label
-    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(30, 10, 234, sizeMainLabel.height)];
+    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(5, 4, 234, 40)];
     titleLabel.text = mainNameLabel;
     titleLabel.numberOfLines = 0;
-    titleLabel.font = [UIFont fontWithName:@"TSTAR-Light" size:20];
-    titleLabel.textColor = [UIColor blueColor];
+    titleLabel.font = [UIFont fontWithName:@"TSTAR-Headline" size:20];
+    titleLabel.textColor = [UIColor colorWithRed:89/255.0 green:173/255.0 blue:222/255.0 alpha:1.0];
     
     
     //description label
     
-    UILabel *descriptionLabel = [[UILabel alloc] initWithFrame:CGRectMake(30, (20 + sizeMainLabel.height), 234, sizeDescriptionLabel.height)];
-    descriptionLabel.text = mainNameLabel;
+    UILabel *descriptionLabel = [[UILabel alloc] initWithFrame:CGRectMake(5, 40, 234, sizeDescriptionLabel.height)];
+    descriptionLabel.text = descriptionLabelText;
     descriptionLabel.numberOfLines = 0;
-    descriptionLabel.font = [UIFont fontWithName:@"TSTAR-Light" size:14];
-    descriptionLabel.textColor = [UIColor blueColor];
+    descriptionLabel.font = [UIFont fontWithName:@"TSTAR-Regular" size:14];
+    descriptionLabel.textColor = [UIColor blackColor];
     
     
     [cell.contentView addSubview:descriptionLabel];
@@ -155,16 +177,21 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-//    NSMutableDictionary *cellDict = [dataArray objectAtIndex:indexPath.row];
-//    
-//    //Title implementation
-//    NSString *mainNameLabel = [cellDict valueForKey:@"description"];
-//    UIFont *mainLabelFont = [UIFont fontWithName:@"TSTAR-Light" size:20];
-//    CGSize SizeMainLabel = [self getSizeOfText:mainNameLabel withFont:mainLabelFont];
-//    
-//    return SizeMainLabel.height+15;
+    //fetching data here for each cell
+    NSMutableDictionary *cellDict = [[dataArray objectAtIndex:indexPath.row]mutableCopy];
+    if([[cellDict valueForKey:@"description"] isEqual:[NSNull null]])
+    {
+        [cellDict setValue:@"-" forKey:@"description"];
+    }
     
-    return 200;
+    NSString *descriptionLabelText = [cellDict valueForKey:@"description"];
+    UIFont *descriptionLabelFont = [UIFont fontWithName:@"TSTAR-Regular" size:14];
+    
+    //get size of text
+    CGSize sizeDescriptionLabel = [self getSizeOfText:descriptionLabelText withFont:descriptionLabelFont];
+ 
+    
+    return (sizeDescriptionLabel.height+60);
 }
 
 
