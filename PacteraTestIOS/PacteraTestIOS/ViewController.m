@@ -17,9 +17,15 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
+    CGRect screenRect = [[UIScreen mainScreen] bounds];
+    CGFloat screenWidth = screenRect.size.width;
+    CGFloat screenHeight = screenRect.size.height;
+    
+    
     [self.view setBackgroundColor:[UIColor whiteColor]];
     dataArray = [[NSMutableArray alloc] init];
-    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 90, 320, 390)];
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 90, 320, screenHeight-90)];
     [self.tableView setDataSource:self];
     [self.tableView setDelegate:self];
     [self.view addSubview:self.tableView];
@@ -41,6 +47,18 @@
     [self getDataFromURL];
 }
 
+-(void)dealloc
+{
+    [dataArray release];
+    [tableView release];
+    [refreshControl release];
+
+    [headinLabel release];
+    [pullDownInstructionLabel release];
+    [super dealloc];
+    
+}
+
 - (void) getDataFromURL
 {
     NSURL *url = [NSURL URLWithString:@"https://dl.dropboxusercontent.com/u/746330/facts.json"];
@@ -53,6 +71,9 @@
     operation.responseSerializer.acceptableContentTypes = [NSSet setWithObject:@"text/plain"];
     [operation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation
                                                , id responseObject) {
+        
+        
+        // added label instead of navigation bar
         
         headinLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 20, 320, 35)];
         headinLabel.text = [responseObject objectForKey:@"title"];
@@ -107,12 +128,10 @@
     static NSString *MyIdentifier = @"MyIdentifier";
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:MyIdentifier];
     cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:MyIdentifier];
-    
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
     //fetching data here for each cell
     NSMutableDictionary *cellDict = [[dataArray objectAtIndex:indexPath.row]mutableCopy];
-    
     //handle null values
-    
     if([[cellDict valueForKey:@"title"] isEqual:[NSNull null]])
     {
          [cellDict setValue:@"-" forKey:@"title"];
@@ -132,11 +151,8 @@
     NSString *mainNameLabel = [cellDict valueForKey:@"title"];
     UIFont *mainLabelFont = [UIFont fontWithName:@"TSTAR-Headline" size:20];
     
-    
     NSString *descriptionLabelText = [cellDict valueForKey:@"description"];
     UIFont *descriptionLabelFont = [UIFont fontWithName:@"TSTAR-Regular" size:14];
-    
-    
     
     //get size of text
     CGSize sizeDescriptionLabel = [self getSizeOfText:descriptionLabelText withFont:descriptionLabelFont];
@@ -171,6 +187,10 @@
     [cell.contentView addSubview:descriptionLabel];
     [cell.contentView addSubview:titleLabel];
     [cell.contentView addSubview:imageView];
+    
+    [imageView release];
+    [titleLabel release];
+    [descriptionLabel release];
     
     return cell;
 }
